@@ -2,8 +2,11 @@ package database
 
 import (
 	"errors"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/mediocregopher/radix.v2/pool"
+	log "github.com/sirupsen/logrus"
 )
 
 //Redis is a struct that hold the pool connection
@@ -13,7 +16,12 @@ type Redis struct {
 
 // New open the pool connection and return
 func New() (r Redis) {
-	p, err := pool.New("tcp", "localhost:6379", 10)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	p, err := pool.New("tcp", os.Getenv("REDIS_URL"), 20)
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,2 @@
+web: stellar
+worker: worker
