@@ -1,0 +1,122 @@
+package model
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/adriendulong/go/stellar/database"
+	log "github.com/sirupsen/logrus"
+)
+
+// Operation types
+const (
+	createAccount      = iota
+	payment            = iota
+	pathPayment        = iota
+	manageOffer        = iota
+	createPassiveOffer = iota
+	setOptions         = iota
+	changeTrust        = iota
+	allowTrust         = iota
+	accountMerge       = iota
+	inflation          = iota
+	manageData         = iota
+	bumpSequence       = iota
+)
+
+// Operation struct contains fields of a stellar operation
+type Operation struct {
+	ID               string `json:"id,omitempty"`
+	Type             string `json:"type,omitempty"`
+	TypeI            int    `json:"type_i,omitempty"`
+	StartingBalance  string `json:"starting_balance,omitempty"`
+	Funder           string `json:"funder,omitempty"`
+	AssetType        string `json:"asset_type,omitempty"`
+	AssetCode        string `json:"asset_code,omitempty"`
+	AssetIssuer      string `json:"asset_issuer,omitempty"`
+	From             string `json:"from,omitempty"`
+	To               string `json:"to,omitempty"`
+	Amount           string `json:"amount,omitempty"`
+	SellingAssetCode string `json:"selling_asset_code,omitempty"`
+	BuyingAssetCode  string `json:"buying_asset_code,omitempty"`
+	Price            string `json:"price,omitempty"`
+	PriceR           PriceR `json:"price_r,omitempty"`
+}
+
+// PriceR is the Numerator (Byuying) and Denominator (Selling)
+type PriceR struct {
+	BuyingPrice  int `json:"n,omitempty"`
+	SellingPrice int `json:"d,omitempty"`
+}
+
+// DescribeOperation returns a description of the operations
+func (o *Operation) DescribeOperation() (s string) {
+	resp := "Don't know this Operation"
+	switch o.TypeI {
+	case createAccount:
+		resp = "Account created founded with " + o.StartingBalance + " by account " + o.Funder
+	case payment:
+		resp = "Payment from " + o.From + " to " + o.To + " of " + o.Amount + "" + o.AssetCode
+	case pathPayment:
+		resp = "Path Payment: "
+	case manageOffer:
+		resp = fmt.Sprintf("Manage offer: propose to sell %s %s for some %s at a ratio of %d %s for %d %s (%s)", o.Amount, o.SellingAssetCode, o.BuyingAssetCode, o.PriceR.BuyingPrice, o.BuyingAssetCode, o.PriceR.SellingPrice, o.SellingAssetCode, o.Price)
+	case createPassiveOffer:
+		resp = "Passive offer: "
+	case setOptions:
+		resp = "Set Options: "
+	case changeTrust:
+		resp = "Change Trust: "
+	case allowTrust:
+		resp = "Allow Trust: "
+	case accountMerge:
+		resp = "Account Merge: "
+	case inflation:
+		resp = "Inflation: "
+	case manageData:
+		resp = "Manage Data: "
+	case bumpSequence:
+		resp = "Bump Sequence: "
+	}
+
+	return resp
+}
+
+// Save insert a new operation in the database
+func (o *Operation) Save(r *database.Redis) {
+	if r.Pool == nil {
+		panic(errors.New("No pool opened on redis"))
+	}
+
+	// Open a connection
+	c, err := r.Pool.Get()
+	if err != nil {
+		panic(err)
+	}
+	defer r.Pool.Put(c)
+
+	// Get the date of today
+	// It will allow us to build the key
+	now := time.Now()
+
+	// Increment the number of operations of today
+	sToday := fmt.Sprintf("operations:count:%d%d%d", now.Day(), now.Month(), now.Year())
+	if c.Cmd("incr", sToday).Err != nil {
+		log.WithFields(log.Fields{
+			"operation_id":   o.ID,
+			"operation_type": o.Type,
+			"date":           now.String(),
+		}).Error("Problem incrementig the general number of operation of the day")
+	}
+
+	// Increment the number of operations of today depending on the type of the operation
+	sTodayType := fmt.Sprintf("operations:%s:count:%d%d%d", o.Type, now.Day(), now.Month(), now.Year())
+	if c.Cmd("incr", sTodayType).Err != nil {
+		log.WithFields(log.Fields{
+			"operation_id":   o.ID,
+			"operation_type": o.Type,
+			"date":           now.String(),
+		}).Error("Problem incrementig the number of operation of a specific type of the day")
+	}
+}
