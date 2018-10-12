@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/adriendulong/go/stellar/api"
 	"github.com/adriendulong/go/stellar/controller"
 	"github.com/adriendulong/go/stellar/database"
 	"github.com/adriendulong/go/stellar/model"
+	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/stellar/go/clients/horizon"
 )
@@ -34,6 +36,16 @@ func getOperations(operationsURL string) {
 
 func main() {
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	if os.Getenv("ENVIRONMENT") == "DEV" {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.WarnLevel)
+	}
+
 	r := database.New()
 	redis = &r
 
@@ -42,7 +54,7 @@ func main() {
 
 	ctx := context.Background()
 
-	err := client.StreamLedgers(ctx, &cursor, func(l horizon.Ledger) {
+	err = client.StreamLedgers(ctx, &cursor, func(l horizon.Ledger) {
 		log.WithFields(log.Fields{
 			"transactions": l.TransactionCount,
 			"operations":   l.OperationCount,

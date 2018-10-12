@@ -19,8 +19,6 @@ type Operations struct {
 
 // GetOperationsFromLedger get all the operations that has been save in a ledger
 func (c *Client) GetOperationsFromLedger(operationsURL string, channelOperation chan<- m.Operation) {
-	log.Println(operationsURL)
-
 	resp, err := c.client.Get(operationsURL)
 	if err != nil {
 		log.Fatalln(err)

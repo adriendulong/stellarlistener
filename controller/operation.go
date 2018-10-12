@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/adriendulong/go/stellar/database"
@@ -14,7 +13,7 @@ import (
 func ListenNewOperations(channelOperation <-chan m.Operation, r *database.Redis) {
 	for op := range channelOperation {
 		go op.Save(r)
-		fmt.Println(op.DescribeOperation())
+		log.Info(op.DescribeOperation())
 	}
 }
 
