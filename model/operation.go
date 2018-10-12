@@ -27,21 +27,25 @@ const (
 
 // Operation struct contains fields of a stellar operation
 type Operation struct {
-	ID               string `json:"id,omitempty"`
-	Type             string `json:"type,omitempty"`
-	TypeI            int    `json:"type_i,omitempty"`
-	StartingBalance  string `json:"starting_balance,omitempty"`
-	Funder           string `json:"funder,omitempty"`
-	AssetType        string `json:"asset_type,omitempty"`
-	AssetCode        string `json:"asset_code,omitempty"`
-	AssetIssuer      string `json:"asset_issuer,omitempty"`
-	From             string `json:"from,omitempty"`
-	To               string `json:"to,omitempty"`
-	Amount           string `json:"amount,omitempty"`
-	SellingAssetCode string `json:"selling_asset_code,omitempty"`
-	BuyingAssetCode  string `json:"buying_asset_code,omitempty"`
-	Price            string `json:"price,omitempty"`
-	PriceR           PriceR `json:"price_r,omitempty"`
+	ID                 string `json:"id,omitempty"`
+	Type               string `json:"type,omitempty"`
+	TypeI              int    `json:"type_i,omitempty"`
+	StartingBalance    string `json:"starting_balance,omitempty"`
+	Funder             string `json:"funder,omitempty"`
+	AssetType          string `json:"asset_type,omitempty"`
+	AssetCode          string `json:"asset_code,omitempty"`
+	AssetIssuer        string `json:"asset_issuer,omitempty"`
+	From               string `json:"from,omitempty"`
+	To                 string `json:"to,omitempty"`
+	Amount             string `json:"amount,omitempty"`
+	SellingAssetCode   string `json:"selling_asset_code,omitempty"`
+	SellingAssetIssuer string `json:"selling_asset_issuer,omitempty"`
+	SellingAssetType   string `json:"selling_asset_type,omitempty"`
+	BuyingAssetCode    string `json:"buying_asset_code,omitempty"`
+	BuyingAssetIssuer  string `json:"buying_asset_issuer,omitempty"`
+	BuyingAssetType    string `json:"buying_asset_type,omitempty"`
+	Price              string `json:"price,omitempty"`
+	PriceR             PriceR `json:"price_r,omitempty"`
 }
 
 // PriceR is the Numerator (Byuying) and Denominator (Selling)
@@ -94,8 +98,7 @@ func (o *Operation) Save(r *database.Redis) {
 	now := time.Now()
 
 	// Increment the number of operations of today
-	sToday := fmt.Sprintf("operations:count:%d%d%d", now.Day(), now.Month(), now.Year())
-	if r.Client.Incr(sToday).Err() != nil {
+	if r.Client.Incr(database.GetCountDayOperationsKey(now)).Err() != nil {
 		log.WithFields(log.Fields{
 			"operation_id":   o.ID,
 			"operation_type": o.Type,
@@ -104,12 +107,37 @@ func (o *Operation) Save(r *database.Redis) {
 	}
 
 	// Increment the number of operations of today depending on the type of the operation
-	sTodayType := fmt.Sprintf("operations:%s:count:%d%d%d", o.Type, now.Day(), now.Month(), now.Year())
-	if r.Client.Incr(sTodayType).Err() != nil {
+	if r.Client.Incr(database.GetCountDayOperationsKeyType(now, o.Type)).Err() != nil {
 		log.WithFields(log.Fields{
 			"operation_id":   o.ID,
 			"operation_type": o.Type,
 			"date":           now.String(),
 		}).Error("Problem incrementig the number of operation of a specific type of the day")
+	}
+
+	if o.TypeI == manageOffer {
+		// Increment the number of operations of today depending on the type of the operation
+		buyingAssetCode := o.BuyingAssetCode
+		if buyingAssetCode == "" {
+			buyingAssetCode = "XLM"
+		}
+
+		if r.Client.Incr(database.GetCountDayManageOfferPerAssetCount(now, buyingAssetCode)).Err() != nil {
+			log.WithFields(log.Fields{
+				"operation_id":      o.ID,
+				"operation_type":    o.Type,
+				"buying_asset_code": buyingAssetCode,
+				"date":              now.String(),
+			}).Error("Problem incrementig the number of manage offer for a certain buying asset")
+		}
+
+		if r.Client.SAdd(database.GetSetBuyingAssetsManageOffer(now), buyingAssetCode).Err() != nil {
+			log.WithFields(log.Fields{
+				"operation_id":      o.ID,
+				"operation_type":    o.Type,
+				"buying_asset_code": buyingAssetCode,
+				"date":              now.String(),
+			}).Error("Problem adding a buying asset to the set of buying asset of the day")
+		}
 	}
 }

@@ -17,6 +17,7 @@ func OperationRoutes() http.Handler {
 	router.Get("/", GeneralOperationHandler)
 	router.Get("/count/{date}", GetOperationCountDay)
 	router.Get("/count/{date}/{type}", GetOperationCountDayType)
+	router.Get("/count/offers/count/{date}/", GetOperationCountDayType)
 
 	return router
 }
@@ -108,4 +109,10 @@ func GetOperationCountDayType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, CountResponse{Count: count})
+}
+
+//GetOperationOffersCount return the count of operations on a given date for a given type
+func GetOperationOffersCount(w http.ResponseWriter, r *http.Request) {
+
+	render.PlainText(w, r, "Later")
 }
