@@ -85,16 +85,9 @@ func (o *Operation) DescribeOperation() (s string) {
 
 // Save insert a new operation in the database
 func (o *Operation) Save(r *database.Redis) {
-	if r.Pool == nil {
-		panic(errors.New("No pool opened on redis"))
+	if r.Client == nil {
+		panic(errors.New("No Client opened on redis"))
 	}
-
-	// Open a connection
-	c, err := r.Pool.Get()
-	if err != nil {
-		panic(err)
-	}
-	defer r.Pool.Put(c)
 
 	// Get the date of today
 	// It will allow us to build the key
@@ -102,7 +95,7 @@ func (o *Operation) Save(r *database.Redis) {
 
 	// Increment the number of operations of today
 	sToday := fmt.Sprintf("operations:count:%d%d%d", now.Day(), now.Month(), now.Year())
-	if c.Cmd("incr", sToday).Err != nil {
+	if r.Client.Incr(sToday).Err() != nil {
 		log.WithFields(log.Fields{
 			"operation_id":   o.ID,
 			"operation_type": o.Type,
@@ -112,7 +105,7 @@ func (o *Operation) Save(r *database.Redis) {
 
 	// Increment the number of operations of today depending on the type of the operation
 	sTodayType := fmt.Sprintf("operations:%s:count:%d%d%d", o.Type, now.Day(), now.Month(), now.Year())
-	if c.Cmd("incr", sTodayType).Err != nil {
+	if r.Client.Incr(sTodayType).Err() != nil {
 		log.WithFields(log.Fields{
 			"operation_id":   o.ID,
 			"operation_type": o.Type,

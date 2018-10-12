@@ -4,14 +4,14 @@ import (
 	"errors"
 	"os"
 
+	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
-	"github.com/mediocregopher/radix.v2/pool"
 	log "github.com/sirupsen/logrus"
 )
 
 //Redis is a struct that hold the pool connection
 type Redis struct {
-	Pool *pool.Pool
+	Client *redis.Client
 }
 
 // New open the pool connection and return
@@ -21,23 +21,23 @@ func New() (r Redis) {
 		log.Fatal("Error loading .env file")
 	}
 
-	log.Info(os.Getenv("REDIS_URL"))
-	p, err := pool.New("tcp", os.Getenv("REDIS_URL"), 20)
+	opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
 	if err != nil {
 		panic(err)
 	}
-	r = Redis{Pool: p}
+	client := redis.NewClient(opt)
+	r = Redis{Client: client}
 	return
 }
 
 // SetKey simple function that set a key with a value
 func (r *Redis) SetKey(k string, v interface{}) {
-	if r.Pool == nil {
-		panic(errors.New("No pool found"))
+	if r.Client == nil {
+		panic(errors.New("No CLient found"))
 	}
 
-	resp := r.Pool.Cmd("set", k, v)
-	if resp.Err != nil {
-		panic(resp.Err)
+	resp := r.Client.Set(k, v, 0)
+	if resp.Err() != nil {
+		panic(resp.Err())
 	}
 }

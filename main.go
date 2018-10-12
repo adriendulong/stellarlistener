@@ -24,8 +24,6 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 // HomeHandler is a simple Handler
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-
 	nbOperations, err := c.TotalOperationsOfDay(time.Now(), redis)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -33,6 +31,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	sResp := fmt.Sprintf("Number total of operation on %s is %d", time.Now(), nbOperations)
 	fmt.Fprintln(w, sResp)
 }

@@ -20,9 +20,9 @@ func ListenNewOperations(channelOperation <-chan m.Operation, r *database.Redis)
 // TotalOperationsOfDay returns the total number of operations that has been done
 // on the stellar network this particular day
 func TotalOperationsOfDay(t time.Time, r *database.Redis) (int, error) {
-	resp := r.Pool.Cmd("get", utils.GetCountDayOperationsKey(t))
-	if resp.Err != nil {
-		return 0, resp.Err
+	resp := r.Client.Get(utils.GetCountDayOperationsKey(t))
+	if resp.Err() != nil {
+		return 0, resp.Err()
 	}
 
 	n, err := resp.Int()
