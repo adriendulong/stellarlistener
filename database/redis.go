@@ -21,6 +21,7 @@ func New() (r Redis) {
 		log.Fatal("Error loading .env file")
 	}
 
+	log.Info(os.Getenv("REDIS_URL"))
 	p, err := pool.New("tcp", os.Getenv("REDIS_URL"), 20)
 	if err != nil {
 		panic(err)
