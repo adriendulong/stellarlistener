@@ -21,6 +21,25 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:a9fe0f8ff72c388d0128e88ce5f3c27d37dcd0950acd7cdb8323555f12463396"
+  name = "github.com/go-chi/chi"
+  packages = [
+    ".",
+    "middleware",
+  ]
+  pruneopts = "UT"
+  revision = "b5294d10673813fac8558e7f47242bc9e61b4c25"
+  version = "v3.3.3"
+
+[[projects]]
+  digest = "1:54d7b4b9ab2bb2bae35b55eea900bc8fe15cba05a95fc78bf7fd7b82a9a07afa"
+  name = "github.com/go-chi/render"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3215478343fbc559bd3fc08f7031bb134d6bdad5"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:aacef5f5e45685f2aeda5534d0a750dee6859de7e9088cdd06192787bb01ae6d"
   name = "github.com/go-errors/errors"
   packages = ["."]
@@ -44,22 +63,6 @@
   pruneopts = "UT"
   revision = "f3bba01df2026fc865f7782948845db9cf44cf23"
   version = "v6.14.1"
-
-[[projects]]
-  digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
-  name = "github.com/gorilla/context"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
-  version = "v1.1.1"
-
-[[projects]]
-  digest = "1:e73f5b0152105f18bc131fba127d9949305c8693f8a762588a82a48f61756f5f"
-  name = "github.com/gorilla/mux"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
-  version = "v1.6.2"
 
 [[projects]]
   digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
@@ -87,17 +90,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "ee05b128a739a0fb76c7ebd3ae4810c1de808d6d"
-
-[[projects]]
-  branch = "master"
-  digest = "1:cffb4ce270238b022c79e2cf09a3f3e3d4c68bf0485902a55243ce3411341287"
-  name = "github.com/mediocregopher/radix.v2"
-  packages = [
-    "pool",
-    "redis",
-  ]
-  pruneopts = "UT"
-  revision = "94360be262532d465b7e4760c7a67195d3319a87"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -199,11 +191,12 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/go-chi/chi",
+    "github.com/go-chi/chi/middleware",
+    "github.com/go-chi/render",
     "github.com/go-redis/redis",
-    "github.com/gorilla/mux",
     "github.com/joho/godotenv",
     "github.com/lib/pq",
-    "github.com/mediocregopher/radix.v2/pool",
     "github.com/sirupsen/logrus",
     "github.com/stellar/go/clients/horizon",
     "github.com/stellar/go/protocols/horizon",
