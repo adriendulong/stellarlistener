@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	c "github.com/adriendulong/go/stellar/controller"
 	"github.com/adriendulong/go/stellar/database"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 var redis *database.Redis
@@ -37,14 +39,19 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	port := os.Getenv("PORT")
+
 	r := database.New()
 	redis = &r
-
-	fmt.Println("Coucou")
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", HomeHandler)
 	router.Use(loggingMiddleware)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	addr := fmt.Sprintf(":%s", port)
+	log.Fatal(http.ListenAndServe(addr, router))
 }
