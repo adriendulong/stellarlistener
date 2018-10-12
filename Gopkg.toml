@@ -26,7 +26,7 @@
 
 [metadata.heroku]
   root-package = "github.com/adriendulong/go/stellar"
-  go-version = "go1.11.1"
+  go-version = "go1.11"
   install = [ "./..."]
   ensure = "false"
   additional-tools = []
