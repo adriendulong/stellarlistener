@@ -13,7 +13,7 @@ import (
 
 //Redis is a struct that hold the pool connection
 type Redis struct {
-	Client *redis.Client
+	Client redis.UniversalClient
 }
 
 //RedisKey represents all the redis keys
@@ -59,7 +59,14 @@ func New() (r Redis) {
 	if err != nil {
 		panic(err)
 	}
-	client := redis.NewClient(opt)
+
+	client := redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs: []string{opt.Addr},
+	})
+	cmd := client.Ping()
+	if cmd.Err() != nil {
+		log.Error(cmd.Err())
+	}
 	r = Redis{Client: client}
 	return
 }

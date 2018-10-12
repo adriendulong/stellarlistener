@@ -23,6 +23,7 @@ func main() {
 
 	re := database.New()
 	redis := &(re)
+	defer redis.Client.Close()
 
 	r := chi.NewRouter()
 

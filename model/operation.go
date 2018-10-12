@@ -97,7 +97,7 @@ func (o *Operation) Save(r *database.Redis) {
 	// It will allow us to build the key
 	now := time.Now()
 
-	// Increment the number of operations of today
+	// Increment the  number of operations of today
 	if r.Client.Incr(database.GetCountDayOperationsKey(now)).Err() != nil {
 		log.WithFields(log.Fields{
 			"operation_id":   o.ID,
