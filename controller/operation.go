@@ -37,13 +37,14 @@ func TotalOperationsOfDay(t time.Time, r *database.Redis) (int, error) {
 // on the stellar network this particular day for this type of operation
 func TotalOpearationsOfDayType(t time.Time, typeOpe string, r *database.Redis, opeChannel chan<- int) {
 	resp := r.Client.Get(utils.GetCountDayOperationsKeyType(t, typeOpe))
+	n := 0
 	if resp.Err() != nil {
-		log.Error(resp.Err())
+		log.Warn(resp.Err())
 	}
 
 	n, err := resp.Int()
 	if err != nil {
-		log.Error(resp.Err())
+		log.Warn(resp.Err())
 	}
 
 	opeChannel <- n

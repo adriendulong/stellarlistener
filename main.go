@@ -55,13 +55,13 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 			log.Info("Got payment nb")
 		case nbOpeTypes["manage_offer"] = <-types["manage_offer"]:
 			log.Info("Got manage_offer nb")
-		case nbOpeTypes["inflation"] = <-types["manage_offer"]:
+		case nbOpeTypes["inflation"] = <-types["inflation"]:
 			log.Info("Got inflation nb")
 		}
 	}
 
 	w.WriteHeader(http.StatusOK)
-	sResp := fmt.Sprintf("Number total of operation on %s is %d\nNumber of Payment is %d\nNumber of Manage Offer is %d", time.Now(), nbOperations, nbOpeTypes["payment"], nbOpeTypes["manage_offer"])
+	sResp := fmt.Sprintf("Number total of operation on %s is %d\nNumber of Payment is %d\nNumber of Manage Offer is %d\nNumber of Inlfation is %d", time.Now(), nbOperations, nbOpeTypes["payment"], nbOpeTypes["manage_offer"], nbOpeTypes["inflation"])
 	fmt.Fprintln(w, sResp)
 }
 
