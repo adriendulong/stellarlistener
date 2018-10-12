@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/adriendulong/go/stellar/database"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	log "github.com/sirupsen/logrus"
 )
 
 var redis *database.Redis
@@ -26,6 +26,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 // HomeHandler is a simple Handler
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+
+	//Get total operations of the day
 	nbOperations, err := c.TotalOperationsOfDay(time.Now(), redis)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -33,8 +35,33 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	types := make(map[string](chan int))
+	types["payment"] = make(chan int)
+	types["manage_offer"] = make(chan int)
+	types["inflation"] = make(chan int)
+
+	nbOpeTypes := make(map[string]int)
+	nbOpeTypes["payment"] = 0
+	nbOpeTypes["manage_offer"] = 0
+	nbOpeTypes["inflation"] = 0
+
+	for k, v := range types {
+		go c.TotalOpearationsOfDayType(time.Now(), k, redis, v)
+	}
+
+	for i := 0; i < len(nbOpeTypes); i++ {
+		select {
+		case nbOpeTypes["payment"] = <-types["payment"]:
+			log.Info("Got payment nb")
+		case nbOpeTypes["manage_offer"] = <-types["manage_offer"]:
+			log.Info("Got manage_offer nb")
+		case nbOpeTypes["inflation"] = <-types["manage_offer"]:
+			log.Info("Got inflation nb")
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
-	sResp := fmt.Sprintf("Number total of operation on %s is %d", time.Now(), nbOperations)
+	sResp := fmt.Sprintf("Number total of operation on %s is %d\nNumber of Payment is %d\nNumber of Manage Offer is %d", time.Now(), nbOperations, nbOpeTypes["payment"], nbOpeTypes["manage_offer"])
 	fmt.Fprintln(w, sResp)
 }
 
