@@ -24,6 +24,13 @@
 #   go-tests = true
 #   unused-packages = true
 
+[metadata.heroku]
+  root-package = "github.com/adriendulong/go/stellar"
+  go-version = "go1.11.1"
+  install = [ "./..."]
+  ensure = "false"
+  additional-tools = []
+
 
 [prune]
   go-tests = true
