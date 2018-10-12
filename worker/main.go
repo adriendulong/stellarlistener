@@ -40,6 +40,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	log.Info("ENVIRONMENT IS")
+	log.Info(os.Getenv("ENVIRONMENT"))
 	if os.Getenv("ENVIRONMENT") == "DEV" {
 		log.SetLevel(log.DebugLevel)
 	} else {
