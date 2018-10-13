@@ -122,6 +122,12 @@ func (o *Operation) Save(r *database.Redis) {
 			buyingAssetCode = "XLM"
 		}
 
+		sellingAssetCode := o.SellingAssetCode
+		if sellingAssetCode == "" {
+			sellingAssetCode = "XLM"
+		}
+
+		//Incr the number total of times an offer has been done for an asset (buying asset)
 		if r.Client.Incr(database.GetCountDayManageOfferPerAssetCount(now, buyingAssetCode)).Err() != nil {
 			log.WithFields(log.Fields{
 				"operation_id":      o.ID,
@@ -131,6 +137,7 @@ func (o *Operation) Save(r *database.Redis) {
 			}).Error("Problem incrementig the number of manage offer for a certain buying asset")
 		}
 
+		//Add this buying asset in a set to list all the buying asset of the day
 		if r.Client.SAdd(database.GetSetBuyingAssetsManageOffer(now), buyingAssetCode).Err() != nil {
 			log.WithFields(log.Fields{
 				"operation_id":      o.ID,
@@ -138,6 +145,28 @@ func (o *Operation) Save(r *database.Redis) {
 				"buying_asset_code": buyingAssetCode,
 				"date":              now.String(),
 			}).Error("Problem adding a buying asset to the set of buying asset of the day")
+		}
+
+		//Incr the number of offer that has been done between this buygin asset and this selling asset
+		if r.Client.Incr(database.GetKeyCountBuyingAssetForAnAsset(now, buyingAssetCode, sellingAssetCode)).Err() != nil {
+			log.WithFields(log.Fields{
+				"operation_id":       o.ID,
+				"operation_type":     o.Type,
+				"buying_asset_code":  buyingAssetCode,
+				"selling_asset_code": sellingAssetCode,
+				"date":               now.String(),
+			}).Error("Problem incrementig the number of offer that has been done for this asset per this selling asset")
+		}
+
+		//Add this selling asset in a set for this buying asset
+		if r.Client.SAdd(database.GetKeySetSellingAssetsForBuyingAsset(now, buyingAssetCode), sellingAssetCode).Err() != nil {
+			log.WithFields(log.Fields{
+				"operation_id":       o.ID,
+				"operation_type":     o.Type,
+				"buying_asset_code":  buyingAssetCode,
+				"selling_asset_code": sellingAssetCode,
+				"date":               now.String(),
+			}).Error("Problem adding a selling asset code to the set of this buying asset")
 		}
 	}
 }

@@ -48,3 +48,18 @@ func TotalOpearationsOfDayType(t time.Time, typeOpe string, r *database.Redis, o
 
 	opeChannel <- n
 }
+
+//GetAllBuyinAssetsOfDay returns the assets that have been bought during this day
+func GetAllBuyinAssetsOfDay(t time.Time, r *database.Redis, assetsChannel chan<- []string) {
+	resp := r.Client.SMembers(database.GetSetBuyingAssetsManageOffer(t))
+	if resp.Err() != nil {
+		log.Warn(resp.Err())
+	}
+
+	buyingAssets, err := resp.Result()
+	if err != nil {
+		log.Warn(err)
+	}
+
+	assetsChannel <- buyingAssets
+}

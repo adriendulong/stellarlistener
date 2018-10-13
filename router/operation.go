@@ -18,6 +18,7 @@ func OperationRoutes() http.Handler {
 	router.Get("/count/{date}", GetOperationCountDay)
 	router.Get("/count/{date}/{type}", GetOperationCountDayType)
 	router.Get("/count/offers/count/{date}/", GetOperationCountDayType)
+	router.Get("/offers/buyingassets/{date}", GetBuyingAssetsOfDay)
 
 	return router
 }
@@ -115,4 +116,30 @@ func GetOperationCountDayType(w http.ResponseWriter, r *http.Request) {
 func GetOperationOffersCount(w http.ResponseWriter, r *http.Request) {
 
 	render.PlainText(w, r, "Later")
+}
+
+//GetBuyingAssetsOfDay return a list of the assets that received an offer today
+func GetBuyingAssetsOfDay(w http.ResponseWriter, r *http.Request) {
+	date := chi.URLParam(r, "date")
+	dateTime, err := time.Parse("02012006", date)
+	if err != nil {
+		panic(err)
+	}
+
+	redis := GetRedis(r)
+	buyingAssetsChannel := make(chan []string)
+	go c.GetAllBuyinAssetsOfDay(dateTime, redis, buyingAssetsChannel)
+
+	assets := <-buyingAssetsChannel
+
+	// type AssetsResponse struct {
+	// 	Asset int `json:"asset"`
+	// }
+
+	// assetsResponse := []AssetsResponse{}
+	// for asset := range assets {
+	// 	assetsResponse.
+	// }
+
+	render.JSON(w, r, assets)
 }
