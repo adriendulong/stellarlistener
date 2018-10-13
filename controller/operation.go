@@ -5,7 +5,6 @@ import (
 
 	"github.com/adriendulong/go/stellar/database"
 	m "github.com/adriendulong/go/stellar/model"
-	"github.com/adriendulong/go/stellar/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,7 +19,7 @@ func ListenNewOperations(channelOperation <-chan m.Operation, r *database.Redis)
 // TotalOperationsOfDay returns the total number of operations that has been done
 // on the stellar network this particular day
 func TotalOperationsOfDay(t time.Time, r *database.Redis) (int, error) {
-	resp := r.Client.Get(utils.GetCountDayOperationsKey(t))
+	resp := r.Client.Get(database.GetCountDayOperationsKey(t))
 	if resp.Err() != nil {
 		return 0, resp.Err()
 	}
@@ -36,7 +35,7 @@ func TotalOperationsOfDay(t time.Time, r *database.Redis) (int, error) {
 // TotalOpearationsOfDayType returns the total number of operations that has been done
 // on the stellar network this particular day for this type of operation
 func TotalOpearationsOfDayType(t time.Time, typeOpe string, r *database.Redis, opeChannel chan<- int) {
-	resp := r.Client.Get(utils.GetCountDayOperationsKeyType(t, typeOpe))
+	resp := r.Client.Get(database.GetCountDayOperationsKeyType(t, typeOpe))
 	n := 0
 	if resp.Err() != nil {
 		log.Warn(resp.Err())
