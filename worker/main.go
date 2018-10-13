@@ -49,6 +49,7 @@ func main() {
 
 	r := database.New()
 	redis = &r
+	defer redis.Client.Close()
 
 	client := horizon.DefaultPublicNetClient
 	cursor := horizon.Cursor("now")
