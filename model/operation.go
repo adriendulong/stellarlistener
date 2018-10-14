@@ -168,5 +168,18 @@ func (o *Operation) Save(r *database.Redis) {
 				"date":               now.String(),
 			}).Error("Problem adding a selling asset code to the set of this buying asset")
 		}
+
+		// Add the price proposed in this manage offer between this selling asset and this buying asset
+		if r.Client.LPush(database.GetPricesProposedBtwBuyingAssetAndSellingAssetListKey(now, buyingAssetCode, sellingAssetCode), o.Price).Err() != nil {
+			log.WithFields(log.Fields{
+				"operation_id":       o.ID,
+				"operation_type":     o.Type,
+				"buying_asset_code":  buyingAssetCode,
+				"selling_asset_code": sellingAssetCode,
+				"price":              o.Price,
+				"date":               now.String(),
+			}).Error("Problem adding the price proposed in the list of price")
+		}
+
 	}
 }

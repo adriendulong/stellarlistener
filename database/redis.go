@@ -34,6 +34,8 @@ func (key RedisKey) String() string {
 		return "%d%d%d:operations:manage_offer:%s:%s:count"
 	case OperationManageOfferSellingAssetForBuyginAssetSetKey:
 		return "%d%d%d:operations:manage_offer:%s"
+	case PricesProposedBtwBuyingAssetAndSellingAssetListKey:
+		return "%d%d%d:operations:manage_offer:%s:%s:prices"
 	}
 
 	return "unknown"
@@ -44,16 +46,28 @@ const (
 	// OperationCountDate represents the count of total operations per date
 	OperationCountDate RedisKey = iota
 
-	//OperationTypeCountDate represents the count of the operation of a certain type at this date
+	// OperationTypeCountDate represents the count of the operation of a certain type at this date
 	OperationTypeCountDate
 
+	// OperationManageOfferPerAssetCount is the key for an incr of the number of manage offer that
+	// has been done for the particular asset (as a buying asset)
 	OperationManageOfferPerAssetCount
 
+	// OperationManageOfferBuyingAssets represents a set that list all buying assets
+	// that were at leat in one manage offer on this date
 	OperationManageOfferBuyingAssets
 
+	// OperationManageOfferBuyingAssetsCount represents a incr that count the number of manage offer
+	// that has been done between this buying asset and this selling asset on this date
 	OperationManageOfferBuyingAssetsCount
 
+	// OperationManageOfferSellingAssetForBuyginAssetSetKey is a set that list all the selling
+	// asset that were proposed for a particular buying asset on this day
 	OperationManageOfferSellingAssetForBuyginAssetSetKey
+
+	// PricesProposedBtwBuyingAssetAndSellingAssetListKey is a list with all the prices that
+	// has been found in a manage offer between a particuler selling asset and a buying asset
+	PricesProposedBtwBuyingAssetAndSellingAssetListKey
 )
 
 // New open the pool connection and return
@@ -120,9 +134,16 @@ func GetKeyCountBuyingAssetForAnAsset(t time.Time, buyingAsset string, sellingAs
 	return
 }
 
-//GetKeySetSellingAssetsForBuyingAsset returns the key of a set that lists all the selling assets of offers
+// GetKeySetSellingAssetsForBuyingAsset returns the key of a set that lists all the selling assets of offers
 // that has been made for this buying asset on a specific day
 func GetKeySetSellingAssetsForBuyingAsset(t time.Time, buyingAsset string) (s string) {
 	s = fmt.Sprintf(OperationManageOfferSellingAssetForBuyginAssetSetKey.String(), t.Day(), t.Month(), t.Year(), buyingAsset)
+	return
+}
+
+// GetPricesProposedBtwBuyingAssetAndSellingAssetListKey returns the PricesProposedBtwBuyingAssetAndSellingAssetListKey key
+// formattes with the date, the buying asset code and the selling asset code
+func GetPricesProposedBtwBuyingAssetAndSellingAssetListKey(t time.Time, buyingAsset string, sellingAsset string) (s string) {
+	s = fmt.Sprintf(PricesProposedBtwBuyingAssetAndSellingAssetListKey.String(), t.Day(), t.Month(), t.Year(), buyingAsset, sellingAsset)
 	return
 }
