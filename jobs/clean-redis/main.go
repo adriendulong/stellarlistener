@@ -13,9 +13,7 @@ import (
 )
 
 func main() {
-	// Get the date
-	dateFormat := os.Args[1]
-	limit, err := strconv.Atoi(os.Args[2])
+	limit, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		limit = 20
 	}
@@ -30,9 +28,7 @@ func main() {
 	redis := database.New()
 	defer redis.Client.Close()
 
-	t, _ := time.Parse("02012006", dateFormat)
-	log.Info(t)
-	//t := time.Now().Add(time.Hour * -24)
+	t := time.Now().Add(time.Hour * -24)
 
 	keyErased := 0
 
@@ -78,8 +74,6 @@ func main() {
 		}
 	}
 
-	log.Info(counts)
-
 	// Sort al these assets count
 	assetListSorted := rankByAssetsCount(counts)
 	log.Info(assetListSorted)
@@ -93,7 +87,6 @@ func main() {
 	for _, countPairAsset := range assetListSorted {
 		if i > limit {
 			logCount++
-			log.Infof("Erase everything for asset %s", countPairAsset.Key)
 			go eraseAllForThisAsset(t, countPairAsset.Key, &redis, doneChannel)
 		}
 		i++
@@ -103,7 +96,6 @@ func main() {
 	for j := 1; j <= nbToErase; j++ {
 		c := <-doneChannel
 		keyErased += c
-		log.Info("Finish one erase")
 	}
 	close(doneChannel)
 	log.Infof("Finished ALL erase. Nb of erased keys: %d", keyErased)
