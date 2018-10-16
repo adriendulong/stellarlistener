@@ -5,6 +5,8 @@ import (
 
 	"github.com/adriendulong/go/stellar/database"
 	m "github.com/adriendulong/go/stellar/model"
+	"github.com/adriendulong/go/stellar/utils"
+	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,4 +64,47 @@ func GetAllBuyinAssetsOfDay(t time.Time, r *database.Redis, assetsChannel chan<-
 	}
 
 	assetsChannel <- buyingAssets
+}
+
+//GetTopBuyingAssetsOfDay returns a sorted list of the top buying assets
+func GetTopBuyingAssetsOfDay(t time.Time, r *database.Redis, c chan<- utils.CountPairList) {
+	resp := r.Client.SMembers(database.GetSetBuyingAssetsManageOffer(t))
+	if resp.Err() != nil {
+		log.Warn(resp.Err())
+	}
+
+	buyingAssets, err := resp.Result()
+	if err != nil {
+		log.Warn(err)
+	}
+
+	// Get thhe count of all these buying assets
+	pipe := r.Client.Pipeline()
+	countsResult := make(map[string]*redis.StringCmd)
+	counts := make(map[string]int)
+	for _, buyingAsset := range buyingAssets {
+		key := database.GetCountDayManageOfferPerAssetCount(t, buyingAsset)
+		result := pipe.Get(key)
+		countsResult[buyingAsset] = result
+	}
+	_, err = pipe.Exec()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Problem getting the count of the buying assets")
+	}
+	for k, result := range countsResult {
+		counts[k], err = result.Int()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("Problem getting the count of this buying asset")
+		}
+	}
+
+	// Sort al these assets count
+	assetListSorted := utils.RankAssetsByCount(counts)
+	log.Info(assetListSorted)
+
+	c <- assetListSorted
 }

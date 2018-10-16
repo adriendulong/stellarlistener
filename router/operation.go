@@ -1,39 +1,81 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
 	c "github.com/adriendulong/go/stellar/controller"
+	"github.com/adriendulong/go/stellar/utils"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	log "github.com/sirupsen/logrus"
 )
 
 //OperationRoutes list all the routes for the Operations
-func OperationRoutes() http.Handler {
-	router := chi.NewRouter()
-	router.Get("/", GeneralOperationHandler)
-	router.Get("/count/{date}", GetOperationCountDay)
-	router.Get("/count/{date}/{type}", GetOperationCountDayType)
-	router.Get("/count/offers/count/{date}/", GetOperationCountDayType)
-	router.Get("/offers/buyingassets/{date}", GetBuyingAssetsOfDay)
+func OperationRoutes(r chi.Router) {
+	r.Get("/", GeneralOperationHandler)
+	r.Route("/{date}", OperationDateRouter)
+	// router.Get("/{date}", GeneralOperationHandler)
+	// router.Get("/count/{date}", GetOperationCountDay)
+	// router.Get("/count/{date}/{type}", GetOperationCountDayType)
+	// router.Get("/count/offers/count/{date}/", GetOperationCountDayType)
+	// router.Get("/offers/buyingassets/{date}", GetBuyingAssetsOfDay)
+}
 
-	return router
+//OperationDateRouter is a router that handles all the route that contains a date
+func OperationDateRouter(r chi.Router) {
+	r.Use(DateCtx)
+	r.Get("/", GeneralOperationHandler)
+	r.Get("/offers", GetGeneralInfosOffers)
+}
+
+//DateCtx is a middleware that parse a date and verify its format
+func DateCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		date := chi.URLParam(r, "date")
+		dateTime, err := time.Parse("02012006", date)
+		if err != nil {
+			http.Error(w, http.StatusText(404), 404)
+			return
+		}
+		ctx := context.WithValue(r.Context(), "date", dateTime)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // GeneralOperationHandler is the general operation handler that give multuple infos
 func GeneralOperationHandler(w http.ResponseWriter, r *http.Request) {
 
+	type GeneralOperationsResp struct {
+		TotalCount int `json:"total_count"`
+		Types      struct {
+			Payment     int `json:"payment"`
+			ManageOffer int `json:"manage_offer"`
+			Inflation   int `json:"inflation"`
+		} `json:"types"`
+	}
+
+	resp := GeneralOperationsResp{}
+
+	log.Info("WORKING")
+
+	requestDate := time.Now()
+	date, ok := r.Context().Value("date").(time.Time)
+	if ok {
+		requestDate = date
+	}
+
 	redis := GetRedis(r)
 	//Get total operations of the day
-	nbOperations, err := c.TotalOperationsOfDay(time.Now(), redis)
+	nbOperations, err := c.TotalOperationsOfDay(requestDate, redis)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		render.PlainText(w, r, err.Error())
 		return
 	}
+	resp.TotalCount = nbOperations
 
 	types := make(map[string](chan int))
 	types["payment"] = make(chan int)
@@ -46,23 +88,22 @@ func GeneralOperationHandler(w http.ResponseWriter, r *http.Request) {
 	nbOpeTypes["inflation"] = 0
 
 	for k, v := range types {
-		go c.TotalOpearationsOfDayType(time.Now(), k, redis, v)
+		go c.TotalOpearationsOfDayType(requestDate, k, redis, v)
 	}
 
 	for i := 0; i < len(nbOpeTypes); i++ {
 		select {
 		case nbOpeTypes["payment"] = <-types["payment"]:
-			log.Info("Got payment nb")
+			resp.Types.Payment = nbOpeTypes["payment"]
 		case nbOpeTypes["manage_offer"] = <-types["manage_offer"]:
-			log.Info("Got manage_offer nb")
+			resp.Types.ManageOffer = nbOpeTypes["manage_offer"]
 		case nbOpeTypes["inflation"] = <-types["inflation"]:
-			log.Info("Got inflation nb")
+			resp.Types.Inflation = nbOpeTypes["inflation"]
 		}
 	}
 
 	w.WriteHeader(http.StatusOK)
-	sResp := fmt.Sprintf("Number total of operation on %s %dth is %d\nNumber of Payment is %d\nNumber of Manage Offer is %d\nNumber of Inlfation is %d", time.Now().Month().String(), time.Now().Day(), nbOperations, nbOpeTypes["payment"], nbOpeTypes["manage_offer"], nbOpeTypes["inflation"])
-	render.PlainText(w, r, sResp)
+	render.JSON(w, r, resp)
 }
 
 //GetOperationCountDay return the count of operations on a given date
@@ -142,4 +183,53 @@ func GetBuyingAssetsOfDay(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	render.JSON(w, r, assets)
+}
+
+//GetGeneralInfosOffers is a route to get all the infos about the
+//manage offers of the day
+func GetGeneralInfosOffers(w http.ResponseWriter, r *http.Request) {
+	type BuyingAssetResp struct {
+		AssetCode  string `json:"asset_code"`
+		TotalCount int    `json:"total_count"`
+	}
+
+	type GeneralOffersResp struct {
+		TotalCount   int               `json:"total_count"`
+		BuyingAssets []BuyingAssetResp `json:"buying_assets"`
+	}
+
+	resp := GeneralOffersResp{BuyingAssets: []BuyingAssetResp{}}
+
+	requestDate := time.Now()
+	date, ok := r.Context().Value("date").(time.Time)
+	if ok {
+		requestDate = date
+	}
+
+	redis := GetRedis(r)
+
+	c1 := make(chan int)
+	c2 := make(chan utils.CountPairList)
+	countOffers := 0
+	topAssets := utils.CountPairList{}
+	go c.TotalOpearationsOfDayType(requestDate, "manage_offer", redis, c1)
+	go c.GetTopBuyingAssetsOfDay(requestDate, redis, c2)
+
+	for i := 0; i < 2; i++ {
+		select {
+		case countOffers = <-c1:
+			fmt.Println("Count Offers", countOffers)
+		case topAssets = <-c2:
+			fmt.Println("Top assets", topAssets)
+		}
+	}
+
+	resp.TotalCount = countOffers
+	for _, a := range topAssets {
+		b := BuyingAssetResp{AssetCode: a.Key, TotalCount: a.Count}
+		resp.BuyingAssets = append(resp.BuyingAssets, b)
+	}
+
+	render.JSON(w, r, resp)
+
 }

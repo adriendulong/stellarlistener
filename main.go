@@ -39,7 +39,7 @@ func main() {
 	// processing should be stopped.
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	r.Mount("/operation", router.OperationRoutes())
+	r.Route("/operations", router.OperationRoutes)
 
 	addr := fmt.Sprintf(":%s", port)
 	http.ListenAndServe(addr, r)

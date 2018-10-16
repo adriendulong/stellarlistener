@@ -2,11 +2,11 @@ package main
 
 import (
 	"os"
-	"sort"
 	"strconv"
 	"time"
 
 	"github.com/adriendulong/go/stellar/database"
+	"github.com/adriendulong/go/stellar/utils"
 	r "github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	// Sort al these assets count
-	assetListSorted := rankByAssetsCount(counts)
+	assetListSorted := utils.RankAssetsByCount(counts)
 	log.Info(assetListSorted)
 
 	//Erase all the keys that are linked to these assets
@@ -154,25 +154,4 @@ func eraseAllForThisAsset(t time.Time, buyingAsset string, r *database.Redis, do
 
 	doneChannel <- count
 
-}
-
-type countPair struct {
-	Key   string
-	Count int
-}
-type countPairList []countPair
-
-func (c countPairList) Len() int           { return len(c) }
-func (c countPairList) Less(i, j int) bool { return c[i].Count < c[j].Count }
-func (c countPairList) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-
-func rankByAssetsCount(assetsCount map[string]int) countPairList {
-	cl := make(countPairList, len(assetsCount))
-	i := 0
-	for k, v := range assetsCount {
-		cl[i] = countPair{k, v}
-		i++
-	}
-	sort.Sort(sort.Reverse(cl))
-	return cl
 }
