@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/adriendulong/go/stellar/database"
@@ -11,15 +12,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	limit = 10
-)
-
 func main() {
 	// Get the date
 	dateFormat := os.Args[1]
+	limit, err := strconv.Atoi(os.Args[2])
+	if err != nil {
+		limit = 20
+	}
+	if limit < 10 {
+		limit = 10
+	}
 
-	err := godotenv.Load()
+	err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
