@@ -21,6 +21,8 @@ func main() {
 		limit = 10
 	}
 
+	limit = 100
+
 	err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
