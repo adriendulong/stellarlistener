@@ -20,8 +20,13 @@ func main() {
 	if limit < 10 {
 		limit = 10
 	}
-
 	limit = 100
+
+	dateStr := os.Args[2]
+	t, err := time.Parse("02012006", dateStr)
+	if err != nil {
+		panic(err)
+	}
 
 	err = godotenv.Load()
 	if err != nil {
@@ -30,7 +35,7 @@ func main() {
 	redis := database.New()
 	defer redis.Client.Close()
 
-	t := time.Now().Add(time.Hour * -24)
+	//t := time.Now().Add(time.Hour * -24)
 
 	keyErased := 0
 
