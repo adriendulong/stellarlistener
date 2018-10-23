@@ -17,9 +17,6 @@ func main() {
 	if err != nil {
 		limit = 20
 	}
-	if limit < 10 {
-		limit = 10
-	}
 
 	dateStr := os.Args[2]
 	t, err := time.Parse("02012006", dateStr)
